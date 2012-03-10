@@ -47,7 +47,7 @@ include Makefile.sources
 skip_cfg_install?=
 
 #extra modules to exclude
-skip_modules?=
+skip_modules?=sangoma
 
 makefile_defs=0
 DEFS:=
