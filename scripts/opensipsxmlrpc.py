@@ -5,7 +5,7 @@ import sys
 import getopt
 
 NO_THREADS=1
-URL = "http://127.0.0.1:8080"
+URL = "http://127.0.0.1:8888"
 QUIET = False
 SUM = False
 

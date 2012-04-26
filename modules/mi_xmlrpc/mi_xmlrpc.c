@@ -1,7 +1,7 @@
 /*
- * $Id: mi_xmlrpc.c 6910 2010-05-26 09:23:27Z bogdan_iancu $
+ * $Id: mi_http.c 8892 2012-03-30 20:11:47Z osas $
  *
- * Copyright (C) 2006 Voice Sistem SRL
+ * Copyright (C) 2011-2012 VoIP Embedded Inc.
  *
  * This file is part of Open SIP Server (opensips).
  *
@@ -21,87 +21,53 @@
  *
  * History:
  * ---------
- *  2006-11-30  first version (lavinia)
- *  2007-10-05  support for libxmlrpc-c3 version 1.x.x added (dragos)
+ *  2011-09-20  first version (osas)
  */
 
-
-
-
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <errno.h>
-#include <signal.h>
-#include <sys/signal.h>
-#include <sys/wait.h>
-#include <grp.h>
 #include <stdlib.h>
-#include "../../sr_module.h"
-#include "mi_xmlrpc.h"
-#include "xr_writer.h"
-#include "xr_parser.h"
-#include "xr_server.h"
 
-#define XMLRPC_SERVER_WANT_ABYSS_HANDLERS
-
-#ifdef XMLRPC_OLD_VERSION
-
-#include "abyss.h"
-#include <xmlrpc_abyss.h>
-#include <xmlrpc.h>
-
-#else
-
-#include <xmlrpc-c/base.h>
-#include <xmlrpc-c/abyss.h>
-#include <xmlrpc-c/server.h>
-#include <xmlrpc-c/server_abyss.h>
-
-#endif
-
-
+#include "../../globals.h"
 #include "../../sr_module.h"
 #include "../../str.h"
+#include "../../ut.h"
+#include "../../resolve.h"
 #include "../../mem/mem.h"
 #include "../../mem/shm_mem.h"
-
-xmlrpc_env env;
-xmlrpc_value * xr_response;
-xmlrpc_registry * registryP;
-
-int rpl_opt = 0;
+#include "../httpd/httpd_load.h"
+//#include "http_fnc.h"
 
 /* module functions */
 static int mod_init();
 static int destroy(void);
-static void xmlrpc_process(int rank);
+void mi_http_answer_to_connection (void *cls, void *connection,
+		const char *url, const char *method,
+		const char *version, const char *upload_data,
+		size_t *upload_data_size, void **con_cls,
+		str *buffer, str *page);
+static int mi_http_flush_data(void *cls, uint64_t pos, char *buf, int max);
 
-static int port = 8080;
-static char *log_file = NULL; 
-static int read_buf_size = MAX_READ;
-static TServer srv;
+str http_root = str_init("RPC2");
+
+httpd_api_t httpd_api;
 
 
-
-static proc_export_t mi_procs[] = {
-	{"MI XMLRPC",  0,  0, xmlrpc_process, 1 , PROC_FLAG_INITCHILD },
-	{0,0,0,0,0,0}
-};
+static const str MI_HTTP_U_ERROR = str_init("<html><body>"
+"Internal server error!</body></html>");
+static const str MI_HTTP_U_URL = str_init("<html><body>"
+"Unable to parse URL!</body></html>");
+static const str MI_HTTP_U_METHOD = str_init("<html><body>"
+"Unexpected method (only GET is accepted)!</body></html>");
 
 
 /* module parameters */
 static param_export_t mi_params[] = {
-	{"port",					INT_PARAM, &port},
-	{"log_file",				STR_PARAM, &log_file},
-	{"reply_option",			INT_PARAM, &rpl_opt},
-	{"buffer_size",				INT_PARAM, &read_buf_size},
+	{"mi_http_root",		STR_PARAM, &http_root.s},
 	{0,0,0}
 };
 
 /* module exports */
 struct module_exports exports = {
-	"mi_xmlrpc",                        /* module name */
+	"mi_http",                          /* module name */
 	MODULE_VERSION,
 	DEFAULT_DLFLAGS,                    /* dlopen flags */
 	0,                                  /* exported functions */
@@ -109,152 +75,186 @@ struct module_exports exports = {
 	0,                                  /* exported statistics */
 	0,                                  /* exported MI functions */
 	0,                                  /* exported PV */
-	mi_procs,                           /* extra processes */
+	0,                                  /* extra processes */
 	mod_init,                           /* module initialization function */
 	(response_function) 0,              /* response handling function */
 	(destroy_function) destroy,         /* destroy function */
-	0                                   /* per-child init function */
+	NULL                                /* per-child init function */
 };
 
 
+void proc_init(void)
+{
+#if 0
+
+	/* Build a cache of all mi commands */
+	if (0!=mi_http_init_cmds())
+		exit(-1);
+
+	/* Build async lock */
+	if (mi_http_init_async_lock() != 0)
+		exit(-1);
+#endif
+
+	return;
+}
+
 static int mod_init(void)
 {
-	LM_DBG("testing port number...\n");
+	http_root.len = strlen(http_root.s);
 
-	if ( port <= 1024 ) {
-		LM_WARN("port<1024, using 8080...\n");
-		port = 8080;
-	}
-
-	if (init_async_lock()!=0) {
-		LM_ERR("failed to init async lock\n");
+	/* Load httpd api */
+	if(load_httpd_api(&httpd_api)<0) {
+		LM_ERR("Failed to load httpd api\n");
 		return -1;
 	}
+	/* Load httpd hooks */
+	httpd_api.register_httpdcb(exports.name, &http_root,
+				&mi_http_answer_to_connection,
+				&mi_http_flush_data,
+				&proc_init);
 
 	return 0;
-}
-
-
-static void xmlrpc_sigchld( int sig )
-{
-	pid_t pid;
-	int status;
-
-	while(1) {
-		pid = waitpid( (pid_t) -1, &status, WNOHANG );
-
-		/* none left */
-		if ( pid == 0 )
-			break;
-
-		if (pid<0) {
-			/* because of ptrace */
-			if ( errno == EINTR )
-				continue;
-
-			break;
-		}
-		#ifndef XMLRPC_OLD_VERSION
-		else 
-			ServerHandleSigchld(pid);
-		#endif
-	}
-#ifdef SIGCLD
-	if (signal(SIGCHLD, xmlrpc_sigchld)==SIG_ERR)
-		LM_ERR("failed to re-install signal handler for SIGCHLD\n");
-#endif
-}
-
-
-static void xmlrpc_process(int rank)
-{
-	/* install handler to catch termination of child processes */
-	if (signal(SIGCHLD, xmlrpc_sigchld)==SIG_ERR) {
-		LM_ERR("failed to install signal handler for SIGCHLD\n");
-		goto error;
-	}
-
-	/* Server Abyss init */
-
-	xmlrpc_env_init(&env);
-
-	#ifdef XMLRPC_OLD_VERSION
-	xmlrpc_server_abyss_init_registry();
-	registryP= xmlrpc_server_abyss_registry();
-	#else
-	registryP = xmlrpc_registry_new(&env);    
-	#endif
-
-	DateInit();
-	MIMETypeInit();
-
-	if (!ServerCreate(&srv, "XmlRpcServer", port, "", log_file)) {
-		LM_ERR("failed to create XMLRPC server\n");
-		goto error;
-	}
-
-	#ifdef XMLRPC_OLD_VERSION
-	if (!ServerAddHandler(&srv, xmlrpc_server_abyss_rpc2_handler)) {
-		LM_ERR("failed to add handler to server\n");
-		goto error;
-	}
-
-	ServerDefaultHandler(&srv, xmlrpc_server_abyss_default_handler);
-
-	#else
-
-	xmlrpc_server_abyss_set_handlers2(&srv, "/RPC2", registryP);
-
-	#endif
-
-	ServerInit(&srv);
-
-	if( init_mi_child() != 0 ) {
-		LM_CRIT("failed to init the mi process\n");
-		goto error;
-	}
-
-	if ( xr_writer_init(read_buf_size) != 0 ) {
-		LM_ERR("failed to init the reply writer\n");
-		goto error;
-	}
-	#ifdef XMLRPC_OLD_VERSION
-	xmlrpc_env_init(&env);
-	#endif
-
-	if ( rpl_opt == 1 ) {
-		xr_response = xmlrpc_build_value(&env, "()");
-		if ( env.fault_occurred ){
-			LM_ERR("failed to create an empty array: %s\n", env.fault_string);
-			goto cleanup;
-		}
-	}
-
-	if ( set_default_method(&env,registryP) != 0 ) {
-		LM_ERR("failed to set up the default method!\n");
-		goto cleanup;
-	}
-
-	/* Run server abyss */
-	LM_INFO("starting xmlrpc server\n");
-
-	ServerRun(&srv);
-
-	LM_CRIT("Server terminated!!!\n");
-
-cleanup:
-	xmlrpc_env_clean(&env);
-	if ( xr_response ) xmlrpc_DECREF(xr_response);
-error:
-	exit(-1);
 }
 
 
 int destroy(void)
 {
-	LM_DBG("destroying module ...\n");
-
-	destroy_async_lock();
-
+	//mi_http_destroy_async_lock();
 	return 0;
 }
+
+
+
+static int mi_http_flush_data(void *cls, uint64_t pos, char *buf, int max)
+{
+	struct mi_handler *hdl = (struct mi_handler*)cls;
+	gen_lock_t *lock;
+	//mi_http_async_resp_data_t *async_resp_data;
+	str page = {NULL, 0};
+#if 0
+	if (hdl==NULL) {
+		LM_ERR("Unexpected NULL mi handler!\n");
+		return -1;
+	}
+	LM_DBG("hdl=[%p], hdl->param=[%p], pos=[%d], buf=[%p], max=[%d]\n",
+		 hdl, hdl->param, (int)pos, buf, max);
+
+	if (pos){
+		LM_DBG("freeing hdl=[%p]: hdl->param=[%p], "
+			" pos=[%d], buf=[%p], max=[%d]\n",
+			 hdl, hdl->param, (int)pos, buf, max);
+		shm_free(hdl);
+		return -1;
+	}
+	async_resp_data =
+		(mi_http_async_resp_data_t*)((char*)hdl+sizeof(struct mi_handler));
+	lock = async_resp_data->lock;
+	lock_get(lock);
+	if (hdl->param) {
+		if (*(struct mi_root**)hdl->param) {
+			page.s = buf;
+			LM_DBG("tree=[%p]\n", *(struct mi_root**)hdl->param);
+			if (mi_http_build_page(&page, max,
+						async_resp_data->mod,
+						async_resp_data->cmd,
+						*(struct mi_root**)hdl->param)!=0){
+				LM_ERR("Unable to build response\n");
+				shm_free(*(void**)hdl->param);
+				*(void**)hdl->param = NULL;
+				lock_release(lock);
+				memcpy(buf, MI_HTTP_U_ERROR.s, MI_HTTP_U_ERROR.len);
+				return MI_HTTP_U_ERROR.len;
+			} else {
+				shm_free(*(void**)hdl->param);
+				*(void**)hdl->param = NULL;
+				lock_release(lock);
+				return page.len;
+			}
+		} else {
+			LM_DBG("data not ready yet\n");
+			lock_release(lock);
+			return 0;
+		}
+	} else {
+		lock_release(lock);
+		LM_ERR("Invalid async reply\n");
+		memcpy(buf, MI_HTTP_U_ERROR.s, MI_HTTP_U_ERROR.len);
+		return MI_HTTP_U_ERROR.len;
+	}
+	lock_release(lock);
+	LM_CRIT("done?\n");
+	shm_free(hdl);
+#endif
+	return -1;
+}
+
+void mi_http_answer_to_connection (void *cls, void *connection,
+		const char *url, const char *method,
+		const char *version, const char *upload_data,
+		size_t *upload_data_size, void **con_cls,
+		str *buffer, str *page)
+{
+	int mod = -1;
+	int cmd = -1;
+	const char *url_args;
+	struct mi_root *tree = NULL;
+	struct mi_handler *async_hdl;
+
+	LM_DBG("START *** cls=%p, connection=%p, url=%s, method=%s, "
+		"versio=%s, upload_data[%d]=%p, con_cls=%p\n",
+			cls, connection, url, method, version,
+			(int)*upload_data_size, upload_data, con_cls);
+	LM_DBG("BUFFER: %.*s",buffer->len, buffer->s);
+	LM_DBG("UPLOAD_DATA: %s",upload_data);
+	LM_DBG("PAGE: %.*s",page->len,page->s); 
+#if 0
+	if (strncmp(method, "GET", 3)==0) {
+		if(0 == mi_http_parse_url(url, &mod, &cmd)) {
+			url_args = httpd_api.lookup_arg(connection, "arg");
+			LM_DBG("url_args [%p]->[%s]\n", url_args, url_args);
+			if (mod>=0 && cmd>=0 && url_args) {
+				tree = mi_http_run_mi_cmd(mod, cmd, url_args,
+							page, buffer, &async_hdl);
+				if (tree == NULL) {
+					LM_ERR("no reply\n");
+					*page = MI_HTTP_U_ERROR;
+				} else if (tree == MI_ROOT_ASYNC_RPL) {
+					LM_DBG("got an async reply\n");
+					tree = NULL;
+				} else {
+					LM_DBG("building on page [%p:%d]\n",
+						page->s, page->len);
+					if(0!=mi_http_build_page(page, buffer->len,
+								mod, cmd, tree)){
+						LM_ERR("unable to build response "
+							"for cmd [%d] w/ args [%s]\n",
+							cmd,
+							url_args);
+						*page = MI_HTTP_U_ERROR;
+					}
+				}
+			} else {
+				page->s = buffer->s;
+				if(0 != mi_http_build_page(page, buffer->len,
+							mod, cmd, tree)) {
+					LM_ERR("unable to build response\n");
+					*page = MI_HTTP_U_ERROR;
+				}
+			}
+			if (tree) {
+				free_mi_tree(tree);
+				tree = NULL;
+			}
+		} else {
+			LM_ERR("unable to parse URL [%s]\n", url);
+			*page = MI_HTTP_U_URL;
+		}
+	} else {
+		LM_ERR("unexpected method [%s]\n", method);
+		*page = MI_HTTP_U_METHOD;
+	}
+#endif
+	return;
+}
+

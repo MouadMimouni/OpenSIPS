@@ -1,0 +1,93 @@
+Apr  7 13:50:34 [9574] DBG:core:yyparse: loading module modules/signaling/signaling.so
+Apr  7 13:50:34 [9574] ERROR:core:yyparse: module 'httpd.so' not found in 'modules/'
+Apr  7 13:50:34 [9574] CRITICAL:core:yyerror: parse error in config file etc/opensips.cfg, line 61, column 13-14: failed to load module
+Apr  7 13:50:34 [9574] DBG:core:yyparse: loading module modules/
+Apr  7 13:50:34 [9574] ERROR:core:sr_load_module: could not open module <modules/>: modules/: cannot read file data: Is a directory
+Apr  7 13:50:34 [9574] CRITICAL:core:yyerror: parse error in config file etc/opensips.cfg, line 61, column 13-14: failed to load module
+Apr  7 13:50:34 [9574] DBG:core:yyparse: loading module modules/mi_xmlrpc/mi_xmlrpc.so
+Apr  7 13:50:34 [9574] DBG:core:yyparse: loading module modules/sl/sl.so
+Apr  7 13:50:34 [9574] DBG:core:yyparse: loading module modules/tm/tm.so
+Apr  7 13:50:34 [9574] DBG:core:register_module: register_pv: tm
+Apr  7 13:50:34 [9574] DBG:core:pv_add_extra: extra items list is not initialized
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: tm matches module tm
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: found <fr_timer> in module tm [modules/]
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: tm matches module tm
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: found <fr_inv_timer> in module tm [modules/]
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: tm matches module tm
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: found <restart_fr_on_each_reply> in module tm [modules/]
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: tm matches module tm
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: found <onreply_avp_mode> in module tm [modules/]
+Apr  7 13:50:34 [9574] DBG:core:yyparse: loading module modules/rr/rr.so
+Apr  7 13:50:34 [9574] DBG:core:register_module: register_pv: rr
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: rr matches module rr
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: found <append_fromtag> in module rr [modules/]
+Apr  7 13:50:34 [9574] DBG:core:yyparse: loading module modules/maxfwd/maxfwd.so
+Apr  7 13:50:34 [9574] DBG:core:yyparse: loading module modules/sipmsgops/sipmsgops.so
+Apr  7 13:50:34 [9574] DBG:core:yyparse: loading module modules/mi_fifo/mi_fifo.so
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: mi_fifo matches module mi_fifo
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: found <fifo_name> in module mi_fifo [modules/]
+Apr  7 13:50:34 [9574] DBG:core:yyparse: loading module modules/uri/uri.so
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: uri matches module uri
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: found <use_uri_table> in module uri [modules/]
+Apr  7 13:50:34 [9574] DBG:core:yyparse: loading module modules/usrloc/usrloc.so
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: usrloc matches module usrloc
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: found <nat_bflag> in module usrloc [modules/]
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: usrloc matches module usrloc
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: found <db_mode> in module usrloc [modules/]
+Apr  7 13:50:34 [9574] DBG:core:yyparse: loading module modules/registrar/registrar.so
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: registrar matches module registrar
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: found <tcp_persistent_flag> in module registrar [modules/]
+Apr  7 13:50:34 [9574] DBG:core:yyparse: loading module modules/acc/acc.so
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: acc matches module acc
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: found <early_media> in module acc [modules/]
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: acc matches module acc
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: found <report_cancels> in module acc [modules/]
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: acc matches module acc
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: found <detect_direction> in module acc [modules/]
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: acc matches module acc
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: found <failed_transaction_flag> in module acc [modules/]
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: acc matches module acc
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: found <log_flag> in module acc [modules/]
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: acc matches module acc
+Apr  7 13:50:34 [9574] DBG:core:set_mod_param_regex: found <log_missed_flag> in module acc [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <mf_process_maxfwd_header>(1) in module maxfwd [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <sl_send_reply>(2) in module sl [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <has_totag>(0) in module uri [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <loose_route>(0) in module rr [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <is_method>(1) in module textops [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <is_method>(1) in module textops [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <record_route>(0) in module rr [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <is_method>(1) in module textops [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <t_check_trans>(0) in module tm [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <t_relay>(0) in module tm [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <sl_send_reply>(2) in module sl [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <is_method>(1) in module textops [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <t_check_trans>(0) in module tm [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <t_relay>(0) in module tm [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <t_check_trans>(0) in module tm [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <is_method>(1) in module textops [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <send_reply>(2) in module signaling [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <loose_route>(0) in module rr [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <is_method>(1) in module textops [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <sl_send_reply>(2) in module sl [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <is_method>(1) in module textops [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <record_route>(0) in module rr [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <is_method>(1) in module textops [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <append_hf>(1) in module textops [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <is_method>(1) in module textops [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <sl_send_reply>(2) in module sl [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <is_method>(1) in module textops [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <save>(1) in module registrar [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <sl_reply_error>(0) in module sl [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <sl_send_reply>(2) in module sl [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <lookup>(2) in module registrar [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <t_newtran>(0) in module tm [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <t_reply>(2) in module tm [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <is_method>(1) in module textops [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <t_on_branch>(1) in module tm [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <t_on_reply>(1) in module tm [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <t_on_failure>(1) in module tm [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <t_relay>(0) in module tm [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <send_reply>(2) in module signaling [modules/]
+Apr  7 13:50:34 [9574] DBG:core:find_cmd_export_t: found <t_was_cancelled>(0) in module tm [modules/]
+Apr  7 13:50:34 [9574] ERROR:core:main: bad config file (2 errors)

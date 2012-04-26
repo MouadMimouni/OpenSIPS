@@ -47,7 +47,7 @@ include Makefile.sources
 skip_cfg_install?=
 
 #extra modules to exclude
-skip_modules?=sangoma
+skip_modules?=sangoma old_mi_xmlrpc
 
 makefile_defs=0
 DEFS:=
@@ -65,6 +65,7 @@ include Makefile.defs
 ifeq ($(TLS),)
 	exclude_modules+= tlsops
 endif
+
 # always exclude the SVN dir
 override exclude_modules+= .svn $(skip_modules)
 

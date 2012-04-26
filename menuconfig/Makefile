@@ -4,7 +4,7 @@ LDFLAGS=-lcurses
 EXEC_NAME=configure
 
 all: $(MENUCONFIG_FILES)
-	$(CC) -o $(EXEC_NAME) $(CFLAGS) $(LDFLAGS) $^
+	$(CC) -o $(EXEC_NAME) $(CFLAGS) $^ $(LDFLAGS) 
 
 proper:
 	rm -f $(EXEC_NAME)
